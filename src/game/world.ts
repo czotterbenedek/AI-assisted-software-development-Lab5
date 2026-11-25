@@ -156,13 +156,14 @@ export class World {
   props: Prop[] = [];
   projectiles: Projectile[] = [];
   player: PlayerState;
-  stats = { kills: 0, shots: 0 };
+  stats = { kills: 0, shots: 0, hits: 0 };
   simTime = 0;
   cleared = false;
   failed = false;
   aimProp: Prop | null = null;
   private nextId = 1;
   private shotCounter = 0;
+  private hitShotIds = new Set<number>();
   private waveIndex = 0;
   private waveArmed = false;
   private waveDelay = 0;
@@ -745,7 +746,12 @@ export class World {
       const px = this.player.pos[0];
       const pz = this.player.pos[2];
       const inside =
-        px >= Math.min(x0, x1) && px <= Math.max(x0, x1) && pz >= Math.min(z0, z1) && pz <= Math.max(z0, z1);
+        this.player.grounded &&
+        Math.abs(this.player.pos[1]) < 1.5 &&
+        px >= Math.min(x0, x1) &&
+        px <= Math.max(x0, x1) &&
+        pz >= Math.min(z0, z1) &&
+        pz <= Math.max(z0, z1);
       if (inside && (!exit.requiresClear || allDead)) this.cleared = true;
     } else if (allDead) {
       this.cleared = true;
@@ -970,6 +976,10 @@ export class World {
         case "enemy":
           b.alive = false;
           copy(b.pos, hitPoint);
+          if (b.ownerId === 0 && !this.hitShotIds.has(b.shotId)) {
+            this.hitShotIds.add(b.shotId);
+            this.stats.hits++;
+          }
           if (hitEnemy) this.killEnemy(hitEnemy, [dirN[0], dirN[1], dirN[2]], hitPoint, false);
           break;
         case "player":

@@ -31,7 +31,11 @@ export class ReplayPlayer {
   simPlayed = 0;
   clock = 0;
   speed = 1;
+  stride = 0;
   current: ReplayFrame | null = null;
+  private prevX = 0;
+  private prevZ = 0;
+  private hasPrev = false;
 
   constructor(def: LevelDef, frames: ReplayFrame[], shared: SharedStaticData) {
     this.frames = frames;
@@ -56,6 +60,12 @@ export class ReplayPlayer {
       for (let i = 0; i < f.steps; i++) this.world.step(FIXED_STEP);
       this.simPlayed += f.steps * FIXED_STEP;
       steps += f.steps;
+      if (this.hasPrev) {
+        this.stride += Math.hypot(f.pos[0] - this.prevX, f.pos[2] - this.prevZ);
+      }
+      this.prevX = f.pos[0];
+      this.prevZ = f.pos[2];
+      this.hasPrev = true;
       this.current = f;
       applied++;
       if (applied > 2e3) break;

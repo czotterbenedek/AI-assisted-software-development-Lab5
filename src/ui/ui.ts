@@ -37,6 +37,7 @@ export interface ResultsState {
   simTime: number;
   kills: number;
   shots: number;
+  hits: number;
   best?: number;
   newBest: boolean;
   hasNext: boolean;
@@ -337,7 +338,7 @@ export class Ui {
     this.screen = "results";
     this.screenEl.hidden = false;
     this.screenEl.className = "screen results";
-    const acc = r.shots > 0 ? `${Math.round((Math.min(r.kills, r.shots) / r.shots) * 100)}%` : "—";
+    const acc = r.shots > 0 ? `${Math.round((Math.min(r.hits, r.shots) / r.shots) * 100)}%` : "—";
     this.screenEl.innerHTML = `
       <h1 class="heading">${r.level.name}<small>CLEARED</small></h1>
       <table class="stats">
@@ -391,7 +392,7 @@ export class Ui {
   }
 
   isUnlocked(index: number): boolean {
-    if (index < 0) return true;
+    if (index <= 0) return true;
     const prev = this.levels[index - 1];
     return !!prev && !!this.save.levels[prev.id]?.cleared;
   }

@@ -1,6 +1,6 @@
 export const FIXED_STEP = 1 / 120;
 const MAX_REAL_DT = 0.1;
-const MAX_STEPS_PER_FRAME = 8;
+const MAX_STEPS_PER_FRAME = 16;
 
 export type TimeLock = "none" | "frozen" | "realtime";
 
@@ -35,7 +35,6 @@ export class Time {
   consumeStep(): boolean {
     if (this.accumulator < FIXED_STEP) return false;
     if (this.stepsThisFrame >= MAX_STEPS_PER_FRAME) {
-      this.accumulator = 0;
       return false;
     }
     this.accumulator -= FIXED_STEP;

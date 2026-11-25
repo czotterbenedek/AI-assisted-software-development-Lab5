@@ -92,7 +92,7 @@ export class Game {
   private threat = 0;
   private deathDir: Vec3 = [0, 0, -1];
   private telegraphing = new Set<number>();
-  private lastResults: { real: number; sim: number; kills: number; shots: number } | null = null;
+  private lastResults: { real: number; sim: number; kills: number; shots: number; hits: number } | null = null;
   private debugOverlayForced = false;
   private perfAccum = 0;
   private perfFrames = 0;
@@ -198,6 +198,7 @@ export class Game {
     this.runRealTime = 0;
     this.flash = [1, 1, 1, 0];
     this.replay = null;
+    if (this.loop) this.loop.time.lock = "none";
   }
 
   private setState(s: GameState): void {
@@ -274,6 +275,7 @@ export class Game {
       sim: this.world.simTime,
       kills: this.world.stats.kills,
       shots: this.world.stats.shots,
+      hits: this.world.stats.hits,
     };
     this.flash = [1, 1, 1, 0.5];
     this.audio.play("clear", { ignoreTime: true });
@@ -282,7 +284,7 @@ export class Game {
 
   private showResults(): void {
     if (document.pointerLockElement) document.exitPointerLock();
-    const r = this.lastResults ?? { real: 0, sim: 0, kills: 0, shots: 0 };
+    const r = this.lastResults ?? { real: 0, sim: 0, kills: 0, shots: 0, hits: 0 };
     const rec = this.save.levels[this.def.id] ?? { cleared: false };
     const newBest = rec.best === void 0 || r.real < rec.best;
     rec.cleared = true;
@@ -299,6 +301,7 @@ export class Game {
       simTime: r.sim,
       kills: r.kills,
       shots: r.shots,
+      hits: r.hits,
       best: rec.best,
       newBest,
       hasNext: this.levelIndex < LEVELS.length - 1,
@@ -339,8 +342,10 @@ export class Game {
     input.update(dt);
     this.stateTime += dt;
     this.ui.update(dt);
-    if (input.wasPressed("debugTimeFreeze")) t.lock = t.lock === "frozen" ? "none" : "frozen";
-    if (input.wasPressed("debugTimeRealtime")) t.lock = t.lock === "realtime" ? "none" : "realtime";
+    if (import.meta.env.DEV) {
+      if (input.wasPressed("debugTimeFreeze")) t.lock = t.lock === "frozen" ? "none" : "frozen";
+      if (input.wasPressed("debugTimeRealtime")) t.lock = t.lock === "realtime" ? "none" : "realtime";
+    }
     if (input.wasPressed("debugOverlay")) this.debugOverlayForced = !this.debugOverlayForced;
 
     const look = {
@@ -380,8 +385,8 @@ export class Game {
         const busy = this.world.player.burstLeft > 0;
         t.timeScale = this.driver.update(
           dt,
-          WALK_SPEED,
           this.player.planarSpeed,
+          WALK_SPEED,
           this.player.lookSpeed,
           !this.player.grounded,
           busy
@@ -519,11 +524,7 @@ export class Game {
           this.player.grounded
         );
       }
-      const stride = inReplay
-        ? this.replay?.current
-          ? Math.hypot(this.replay.current.pos[0], this.replay.current.pos[2])
-          : 0
-        : this.player.stride;
+      const stride = inReplay ? (this.replay?.stride ?? 0) : this.player.stride;
       this.viewmodel.draw(
         this.renderer,
         this.meshes,
@@ -674,7 +675,7 @@ export class Game {
     p.outline = 1;
     this.flash[3] = approach(this.flash[3], 0, this.state === "dead" ? 0.6 : 0.25, realDt);
     if (this.state === "dead") p.desaturation = Math.max(p.desaturation, 0.85);
-    p.flash = this.flash;
+    p.flash = reduce ? [1, 1, 1, 0] : this.flash;
     const incoming = this.incomingThreat(world);
     this.threat = approach(this.threat, incoming, incoming > this.threat ? 0.05 : 2.5, realDt);
     p.threat = reduce ? 0 : this.threat;
