@@ -1,3 +1,6 @@
+Repo URL: [here](https://github.com/czotterbenedek/AI-assisted-software-development-Lab5)
+Game URL: [here](https://czotterbenedek.github.io/AI-assisted-software-development-Lab5/)
+
 Prompt:
 
 Analyze Lab05-Testing-Index.html
