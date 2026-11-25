@@ -1,0 +1,1 @@
+I wanted to separate all the individual components into logically distributed folders and every component has its own file.
